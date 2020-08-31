@@ -1,0 +1,182 @@
+package de.fhbielefeld.scl.rest.exceptions.handlers;
+
+import de.fhbielefeld.scl.logger.Logger;
+import de.fhbielefeld.scl.logger.message.Message;
+import de.fhbielefeld.scl.logger.message.MessageLevel;
+import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
+import java.lang.reflect.InvocationTargetException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.ProcessingException;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
+
+/**
+ *
+ * @author jannik, dstarke
+ */
+@Provider
+@Produces(MediaType.APPLICATION_JSON)
+public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
+
+    @Context
+    private HttpServletRequest request;
+
+    public GeneralExceptionMapper() {
+    }
+
+    /**
+     * Generates a response for not catched exceptions
+     *
+     * @param exception Exception
+     * @return response error
+     */
+    @Override
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response toResponse(Exception exception) {
+        return this.toResponseObjectBuilder(exception).toResponse();
+    }
+
+    /**
+     * Gerates a ResponseObjectBuilder from a given Exception. Formats the
+     * exception so it is usefull for the enduser.
+     *
+     * @param exception Exception that must be delivered to the enduser
+     * @return ResponseObjectBuilder describing the exception
+     */
+    public ResponseObjectBuilder toResponseObjectBuilder(Throwable exception) {
+        // If it is a InvocationTargetException handle the nested exception
+        if (exception.getClass().equals(InvocationTargetException.class)) {
+            Throwable rootexception = exception.getCause();
+            if (rootexception != null) {
+                exception = rootexception;
+            }
+        }
+
+        // Do not handle REST exceptions
+        if (exception.getClass().getCanonicalName().contains("javax.ws.rs.NotFoundException")) {
+            String nfmsg = "The requested REST interface >"
+                    + request.getPathInfo() + "< could not be found.";
+            ResponseObjectBuilder rob = new ResponseObjectBuilder();
+            rob.setStatus(Response.Status.NOT_FOUND);
+            rob.addErrorMessage(nfmsg);
+            Message msg = new Message(nfmsg, MessageLevel.ERROR);
+            Logger.addDebugMessage(msg);
+            return rob;
+        }
+
+        // Handling SSL exception
+        if (exception.getClass().getCanonicalName().contains("javax.ws.rs.ProcessingException")) {
+            ProcessingException pex = (ProcessingException) exception;
+            return this.createProcessingExceptionResponse(pex);
+        }
+
+        return this.createUnkownExceptionResponse(exception);
+    }
+
+    /**
+     * Creates a response for a SSLHAndshakeException capsled in
+     * ProcessingException
+     *
+     * @param pex A processingException
+     * @return Response object with information about the exception
+     */
+    private ResponseObjectBuilder createProcessingExceptionResponse(ProcessingException pex) {
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        if (pex.getCause().getClass().getSimpleName().contains("SSLHandshakeException")) {
+            SSLHandshakeException sslex = (SSLHandshakeException) pex.getCause();
+            rob.setStatus(Response.Status.BAD_GATEWAY);
+            rob.addErrorMessage("SSL connection error: " + sslex.getLocalizedMessage());
+        } else {
+            rob = this.createUnkownExceptionResponse(pex);
+        }
+        return rob;
+    }
+
+    /**
+     * Creates a response for a not otherwise handled exception
+     *
+     * @param exception Exception
+     * @return Response with text containing the name of the exception
+     */
+    private ResponseObjectBuilder createUnkownExceptionResponse(Throwable exception) {
+        System.out.println("TEST createUnkownExceptionResponse!");
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
+        rob.addErrorMessage("Exception >" + exception.getClass().getSimpleName() + "< occurred.");
+        System.err.println("=== STACKTRACE for unmapped exception ===");
+        exception.printStackTrace();
+        return rob;
+    }
+
+    /**
+     * Searches for an message in stacktrace and returns the full message.
+     * Returns the first found
+     *
+     * @param ex Exception where to start search
+     * @param searchExpression Expressions searched
+     * @return Message with expression or null, if not found
+     */
+    private String searchMessageContaining(Throwable ex, String... searchExpression) {
+        for (int i = 0; i < searchExpression.length; i++) {
+            if (ex.getLocalizedMessage() != null
+                    && ex.getLocalizedMessage().contains(searchExpression[i])) {
+                return ex.getLocalizedMessage();
+            }
+        }
+        // Search in cause
+        if (ex.getCause() != null) {
+            String msg1 = searchMessageContaining(ex.getCause(), searchExpression);
+            if (msg1 != null) {
+                return msg1;
+            }
+        }
+
+        // Search in suppressed
+        Throwable[] suppressed = ex.getSuppressed();
+        for (int i = 0; i < suppressed.length; i++) {
+            String msg = searchMessageContaining(suppressed[i], searchExpression);
+            if (msg != null) {
+                return msg;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Searches if the given exception contains an exception of the given kind
+     * in it cause or supressed exceptions.
+     *
+     * @param ex Exception beginning the search
+     * @param exceptionClass Searched exception class
+     * @return Found exception of the awaited class or null
+     */
+    private Throwable searchExceptionContaining(Throwable ex, Class exceptionClass) {
+        // Check if exception is of the searched kind
+        if (ex.getClass() == exceptionClass) {
+            return ex;
+        }
+
+        // Search in cause
+        if (ex.getCause() != null) {
+            Throwable cause = searchExceptionContaining(ex.getCause(), exceptionClass);
+            if (cause != null) {
+                return cause;
+            }
+        }
+
+        // Search in suppressed
+        Throwable[] suppressed = ex.getSuppressed();
+        for (int i = 0; i < suppressed.length; i++) {
+            Throwable supressedEx = searchExceptionContaining(suppressed[i], exceptionClass);
+            if (supressedEx != null) {
+                return supressedEx;
+            }
+        }
+        return null;
+    }
+}
