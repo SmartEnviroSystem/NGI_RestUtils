@@ -69,7 +69,6 @@ public class WebTargetCreator {
      */
     public WebTarget createWebTarget(String resource) {
         WebTarget webTarget;
-        System.out.println("TEST 2");
         Client client = ClientBuilder.newClient();
 //        client.register(EncodingFilter.class);
 //        client.register(GZipEncoder.class);
@@ -87,7 +86,6 @@ public class WebTargetCreator {
      * @return WebTarget to the resource
      */
     public static WebTarget createWebTarget(String base_url, String resource) {
-        System.out.println("TEST 1");
         WebTargetCreator creator = new WebTargetCreator(base_url);
         return creator.createWebTarget(resource);
     }
