@@ -75,10 +75,10 @@ public class ObjectConverter {
     /**
      * Converts an object into a ResponseObjectBuilder a json capable of useage
      * as response.
-     * 
+     *
      * @param obj Object to convert
      * @return Object in ResponseObjectBuilder form
-     * @throws ObjectConvertException 
+     * @throws ObjectConvertException
      */
     public static ResponseObjectBuilder objectToResponseObjectBuilder(Object obj) throws ObjectConvertException {
         ResponseObjectBuilder rob = new ResponseObjectBuilder(false);
@@ -91,15 +91,17 @@ public class ObjectConverter {
                 // Exclude null values and serialUID fields
                 if (value != null && !curField.getName().equalsIgnoreCase("serialVersionUID")) {
                     rob.add(curField.getName(), value);
-                } else if(value == null) {
+                } else if (value == null) {
                     nullFields.add(curField.getName());
                 }
             }
             // Debug message for null fields
-            Message msg = new Message(
-                    "The fields >" + nullFields + "< are not included in result, because they have null values.", 
-                    MessageLevel.INFO);
-            Logger.addDebugMessage(msg);
+            if (!nullFields.isEmpty()) {
+                Message msg = new Message(
+                        "The fields >" + nullFields + "< are not included in result, because they have null values.",
+                        MessageLevel.INFO);
+                Logger.addDebugMessage(msg);
+            }
         } catch (IllegalArgumentException | IllegalAccessException ex) {
             ObjectConvertException oce = new ObjectConvertException("Could not convert object: " + ex.getLocalizedMessage());
             oce.addSuppressed(ex);
