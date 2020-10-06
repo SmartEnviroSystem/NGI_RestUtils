@@ -104,10 +104,14 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
      * @return Response with text containing the name of the exception
      */
     private ResponseObjectBuilder createUnkownExceptionResponse(Throwable exception) {
-        System.out.println("TEST createUnkownExceptionResponse!");
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-        rob.addErrorMessage("Exception >" + exception.getClass().getSimpleName() + "< occurred.");
+        String msg = exception.getLocalizedMessage();
+        if(msg == null && exception.getSuppressed().length > 0) {
+            msg = exception.getSuppressed()[0].getLocalizedMessage();
+        }
+        
+        rob.addErrorMessage(msg + "(" + exception.getClass().getSimpleName() + ")");
         System.err.println("=== STACKTRACE for unmapped exception ===");
         exception.printStackTrace();
         return rob;
