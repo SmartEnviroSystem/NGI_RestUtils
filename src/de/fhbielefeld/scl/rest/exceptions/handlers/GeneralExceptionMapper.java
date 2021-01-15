@@ -1,10 +1,12 @@
 package de.fhbielefeld.scl.rest.exceptions.handlers;
 
 import de.fhbielefeld.scl.logger.Logger;
+import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import java.lang.reflect.InvocationTargetException;
+import javax.naming.NamingException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.ProcessingException;
@@ -27,6 +29,14 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
     private HttpServletRequest request;
 
     public GeneralExceptionMapper() {
+        // Init logging
+        try {
+            String moduleName = (String) new javax.naming.InitialContext().lookup("java:module/ModuleName");
+            Logger.getInstance("SmartData", moduleName);
+            Logger.setDebugMode(true);
+        } catch (LoggerException | NamingException ex) {
+            System.err.println("Error init logger: " + ex.getLocalizedMessage());
+        }
     }
 
     /**
@@ -57,13 +67,23 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
             }
         }
 
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        // Handle no interface given
+        if(request.getPathInfo()==null) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage("No interface selected");
+            return rob;
+        }
         // Do not handle REST exceptions
         if (exception.getClass().getCanonicalName().contains("javax.ws.rs.NotFoundException")) {
             String nfmsg = "The requested REST interface >"
                     + request.getPathInfo() + "< could not be found.";
-            ResponseObjectBuilder rob = new ResponseObjectBuilder();
             rob.setStatus(Response.Status.NOT_FOUND);
             rob.addErrorMessage(nfmsg);
+            if(request.getRequestURI().contains("\\\\")) {
+                rob.addErrorMessage("Request uri contains double slash! " + request.getRequestURI());
+            }
+            
             Message msg = new Message(nfmsg, MessageLevel.ERROR);
             Logger.addDebugMessage(msg);
             return rob;
