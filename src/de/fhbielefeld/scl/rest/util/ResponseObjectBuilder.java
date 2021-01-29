@@ -99,7 +99,7 @@ public class ResponseObjectBuilder {
      */
     public ResponseObjectBuilder setCookie(String name, String value, int maxAge) {
         // Defines the cookie without domain, path and comment. Send over http and https and without httpOnly mode (allow access with javascript)
-        this.cookie = new NewCookie(name, value, "/SmartMonitoringBackend", null, null, maxAge, false, false);
+        this.cookie = new NewCookie(name, value, "/", null, null, maxAge, false, false);
         return this;
     }
 
