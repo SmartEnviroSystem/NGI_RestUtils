@@ -81,26 +81,24 @@ public class ObjectConverter {
      * @throws ObjectConvertException
      */
     public static ResponseObjectBuilder objectToResponseObjectBuilder(Object obj) throws ObjectConvertException {
-        ResponseObjectBuilder rob = new ResponseObjectBuilder(false);
+        ResponseObjectBuilder rob = new ResponseObjectBuilder();
         try {
-            List<String> nullFields = new ArrayList<>();
             for (Field curField : AttributeReflection.getAllFields(obj.getClass())) {
-                curField.setAccessible(true);
-                // Get object value
-                Object value = curField.get(obj);
-                // Exclude null values and serialUID fields
-                if (value != null && !curField.getName().equalsIgnoreCase("serialVersionUID")) {
-                    rob.add(curField.getName(), value);
-                } else if (value == null) {
-                    nullFields.add(curField.getName());
+                // Exclude unwanted fields
+                switch(curField.getName()) {
+                    case "serialVersionUID":
+                        break;
+                    default:
+                        curField.setAccessible(true);
+                        // Get object value
+                        Object value = curField.get(obj);
+                        // Exclude null values and serialUID fields
+                        if (value != null) {
+                            rob.add(curField.getName(), value);
+                        } else if (value == null) {
+                            rob.addNullField(obj.getClass().getSimpleName() + ">" + curField.getName());
+                        }
                 }
-            }
-            // Debug message for null fields
-            if (!nullFields.isEmpty()) {
-                Message msg = new Message(
-                        "The fields >" + nullFields + "< are not included in result, because they have null values.",
-                        MessageLevel.INFO);
-                Logger.addDebugMessage(msg);
             }
         } catch (IllegalArgumentException | IllegalAccessException ex) {
             ObjectConvertException oce = new ObjectConvertException("Could not convert object: " + ex.getLocalizedMessage());

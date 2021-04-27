@@ -2,29 +2,23 @@ package de.fhbielefeld.scl.rest.util;
 
 import de.fhbielefeld.scl.rest.converters.ObjectConverter;
 import de.fhbielefeld.scl.rest.exceptions.ObjectConvertException;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-//import javax.persistence.Entity;
 
 /**
  * Builder for lists of responses.
  *
  * @author jannik, Florian Fehring
  */
-public class ResponseListBuilder {
+public class ResponseListBuilder extends ApiResponseBuilder {
 
-    private boolean resolveReferences = false;
     private final List<String> attrs = new ArrayList<>();
-    private final List<String> errors = new ArrayList<>();
-    private final List<Exception> exceptions = new ArrayList<>();
 
     public ResponseListBuilder() {
 
-    }
-
-    public ResponseListBuilder(boolean isSubList) {
-        this.resolveReferences = isSubList;
     }
 
     /**
@@ -50,24 +44,11 @@ public class ResponseListBuilder {
             this.attrs.add((Boolean) value + "");
         } else if (value instanceof ResponseObjectBuilder) {
             ResponseObjectBuilder rob = (ResponseObjectBuilder) value;
+            this.mergeMessages(rob);
             this.attrs.add(rob.toString());
         } else if (value instanceof ResponseListBuilder) {
             ResponseListBuilder rlb = (ResponseListBuilder) value;
             this.attrs.add(rlb.toString());
-//        } else if (value.getClass().isAnnotationPresent(Entity.class) && resolveReferences) {
-//            try {
-//                ResponseObjectBuilder rob = ObjectConverter.objectToResponseObjectBuilder(value);
-//                this.attrs.add(rob.toString());
-//            } catch (ObjectConvertException ex) {
-//                this.errors.add("Error converting list-value: " + ex.getLocalizedMessage());
-//                this.exceptions.add(ex);
-//
-//                ex.printStackTrace();
-//            }
-//        } else if (value.getClass().isAnnotationPresent(Entity.class)) {
-//            // Add reference to subobject
-//            String ref = ObjectConverter.objectToRefrence(value);
-//            this.add(ref);
         } else if (value instanceof Map) {
             // Case for map values
             Map map = (Map) value;
@@ -76,11 +57,13 @@ public class ResponseListBuilder {
                 Map.Entry curEntry = (Map.Entry) curEntryObj;
                 subrob.add(curEntry.getKey().toString(), curEntry.getValue());
             }
+            this.mergeMessages(subrob);
             this.add(subrob);
-        } else {           
+        } else {
             // Try convert object to json
             try {
                 ResponseObjectBuilder rob = ObjectConverter.objectToResponseObjectBuilder(value);
+                this.mergeMessages(rob);
                 this.add(rob);
             } catch (ObjectConvertException ex) {
                 this.attrs.add("\"" + value.toString() + "\"");
@@ -89,27 +72,26 @@ public class ResponseListBuilder {
         return this;
     }
 
-    /**
-     * Gets an list of all occured errors
-     *
-     * @return List of errors
-     */
-    public List<String> getErrors() {
-        return errors;
-    }
-
-    /**
-     * Gets an list of all occured exceptions
-     *
-     * @return List of exceptions
-     */
-    public List<Exception> getExceptions() {
-        return exceptions;
+    @Override
+    public String toJson() {
+        // Useing fast native implemented toString of list
+        return this.attrs.toString();
     }
 
     @Override
-    public String toString() {
-        // Useing fast native implemented toString of list
-        return this.attrs.toString();
+    public boolean toWriter(Writer writer) throws IOException {
+        if (!attrs.isEmpty()) {
+            int size = attrs.size();
+            int current = 0;
+            for (String curValue : attrs) {
+                current++;
+                writer.write(curValue);
+                if (current < size) {
+                    writer.write(",");
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }
