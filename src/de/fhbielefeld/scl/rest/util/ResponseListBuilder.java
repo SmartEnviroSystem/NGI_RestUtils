@@ -73,6 +73,17 @@ public class ResponseListBuilder extends ApiResponseBuilder {
     }
 
     @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        // Add content
+        String json = this.toJson();
+        sb.append(json);
+        
+        return sb.toString();
+    }
+    
+    @Override
     public String toJson() {
         // Useing fast native implemented toString of list
         return this.attrs.toString();

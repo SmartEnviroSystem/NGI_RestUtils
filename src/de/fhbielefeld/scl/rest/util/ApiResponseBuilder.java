@@ -26,16 +26,16 @@ import javax.ws.rs.core.StreamingOutput;
  */
 public abstract class ApiResponseBuilder {
 
-    private static boolean debugmode = false;
-    private Response.Status status = null;
-    private NewCookie cookie = null;
-    private String downloadFileName = null;
+    protected static boolean debugmode = false;
+    protected Response.Status status = null;
+    protected NewCookie cookie = null;
+    protected String downloadFileName = null;
 
-    private final Map<String, Class> convertedToString = new HashMap<>();
-    private final List<String> nullfields = new ArrayList<>();
-    private final List<String> warnings = new ArrayList<>();
-    private final List<String> errors = new ArrayList<>();
-    private final List<Throwable> exceptions = new ArrayList<>();
+    protected final Map<String, Class> convertedToString = new HashMap<>();
+    protected final List<String> nullfields = new ArrayList<>();
+    protected final List<String> warnings = new ArrayList<>();
+    protected final List<String> errors = new ArrayList<>();
+    protected final List<Throwable> exceptions = new ArrayList<>();
 
     /**
      * Sets the state of the debugmode
@@ -282,70 +282,6 @@ public abstract class ApiResponseBuilder {
         }
 
         return rb;
-    }
-
-    /**
-     * Generates response as json
-     *
-     * @return Json or JsonP as result.
-     */
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-
-        // Add content
-        String json = this.toJson();
-        sb.append(json);
-        boolean prevCont = !json.isEmpty();
-
-        // Add warnings
-        if (!warnings.isEmpty()) {
-            if (prevCont) {
-                sb.append(",");
-            }
-            sb.append("\"warnings\": [");
-            for (int i = 0; i < warnings.size(); i++) {
-                sb.append("\"" + warnings.get(i) + "\"");
-                if (i < warnings.size() - 1) {
-                    sb.append(",");
-                }
-                prevCont = true;
-            }
-            sb.append("]");
-        }
-        // Add errors
-        if (!errors.isEmpty()) {
-            if (prevCont) {
-                sb.append(",");
-            }
-            sb.append("\"errors\": [");
-            for (int i = 0; i < errors.size(); i++) {
-                sb.append("\"" + errors.get(i) + "\"");
-                if (i < errors.size() - 1) {
-                    sb.append(",");
-                }
-                prevCont = true;
-            }
-            sb.append("]");
-        }
-        // Add exceptions
-        if (!exceptions.isEmpty()) {
-            if (prevCont) {
-                sb.append(",");
-            }
-            sb.append("\"exceptions\": [");
-            for (int i = 0; i < exceptions.size(); i++) {
-                sb.append("\"" + exceptions.get(i).getLocalizedMessage() + "\"");
-                if (i < exceptions.size() - 1) {
-                    sb.append(",");
-                }
-            }
-            sb.append("]");
-        }
-
-        sb.append("}");
-        return sb.toString();
     }
 
     /**

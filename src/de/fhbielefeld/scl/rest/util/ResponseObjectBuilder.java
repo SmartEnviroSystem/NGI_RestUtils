@@ -120,6 +120,8 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
         } else if (value instanceof ResponseListBuilder) {
             ResponseListBuilder rlb = (ResponseListBuilder) value;
             this.mergeMessages(rlb);
+            System.out.println("addListBuilder:");
+            System.out.println(rlb.toString());
             this.attrs.put(key, rlb.toString());
         } else if (value instanceof Map) {
             // Case for map values
@@ -134,6 +136,7 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.mergeMessages(subrob);
         } else if (value instanceof Collection) {
             // Case for collections (list, etc.)
+            System.out.println("addCollection");
             Collection<?> col = (Collection) value;
             ResponseListBuilder rlb = new ResponseListBuilder();
             col.stream().forEach(
@@ -157,6 +160,70 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
         return this;
     }
 
+    /**
+     * Generates response as json
+     *
+     * @return Json or JsonP as result.
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+
+        // Add content
+        String json = this.toJson();
+        sb.append(json);
+        boolean prevCont = !json.isEmpty();
+
+        // Add warnings
+        if (!warnings.isEmpty()) {
+            if (prevCont) {
+                sb.append(",");
+            }
+            sb.append("\"warnings\": [");
+            for (int i = 0; i < warnings.size(); i++) {
+                sb.append("\"" + warnings.get(i) + "\"");
+                if (i < warnings.size() - 1) {
+                    sb.append(",");
+                }
+                prevCont = true;
+            }
+            sb.append("]");
+        }
+        // Add errors
+        if (!errors.isEmpty()) {
+            if (prevCont) {
+                sb.append(",");
+            }
+            sb.append("\"errors\": [");
+            for (int i = 0; i < errors.size(); i++) {
+                sb.append("\"" + errors.get(i) + "\"");
+                if (i < errors.size() - 1) {
+                    sb.append(",");
+                }
+                prevCont = true;
+            }
+            sb.append("]");
+        }
+        // Add exceptions
+        if (!exceptions.isEmpty()) {
+            if (prevCont) {
+                sb.append(",");
+            }
+            sb.append("\"exceptions\": [");
+            for (int i = 0; i < exceptions.size(); i++) {
+                sb.append("\"" + exceptions.get(i).getLocalizedMessage() + "\"");
+                if (i < exceptions.size() - 1) {
+                    sb.append(",");
+                }
+            }
+            sb.append("]");
+        }
+
+        sb.append("}");
+        return sb.toString();
+    }
+    
     @Override
     public String toJson() {
         StringBuilder sb = new StringBuilder();
