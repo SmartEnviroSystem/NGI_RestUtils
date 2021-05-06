@@ -120,8 +120,6 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
         } else if (value instanceof ResponseListBuilder) {
             ResponseListBuilder rlb = (ResponseListBuilder) value;
             this.mergeMessages(rlb);
-            System.out.println("addListBuilder:");
-            System.out.println(rlb.toString());
             this.attrs.put(key, rlb.toString());
         } else if (value instanceof Map) {
             // Case for map values
@@ -136,7 +134,6 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.mergeMessages(subrob);
         } else if (value instanceof Collection) {
             // Case for collections (list, etc.)
-            System.out.println("addCollection");
             Collection<?> col = (Collection) value;
             ResponseListBuilder rlb = new ResponseListBuilder();
             col.stream().forEach(
