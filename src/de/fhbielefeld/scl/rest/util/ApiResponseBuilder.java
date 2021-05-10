@@ -8,10 +8,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
@@ -36,6 +38,7 @@ public abstract class ApiResponseBuilder {
     protected final List<String> warnings = new ArrayList<>();
     protected final List<String> errors = new ArrayList<>();
     protected final List<Throwable> exceptions = new ArrayList<>();
+    protected final Map<String, String> links = new HashMap<>();
 
     /**
      * Sets the state of the debugmode
@@ -88,6 +91,18 @@ public abstract class ApiResponseBuilder {
         return this;
     }
 
+    /**
+     * Adds an HATEOAS link to the response
+     * 
+     * @param url
+     * @param d
+     * @return 
+     */
+    public ApiResponseBuilder addLink(String url, String d) {
+        this.links.put(url, url);
+        return this;
+    }
+    
     /**
      * Declares the generated response as downloadable.The given filename will
      * be the suggested filename for download in client.
@@ -241,7 +256,7 @@ public abstract class ApiResponseBuilder {
             }
         };
         ResponseBuilder rb = this.createResponseBuilder();
-        rb.entity(stream);
+        rb.entity(stream);        
         return rb.build();
     }
 
@@ -262,6 +277,12 @@ public abstract class ApiResponseBuilder {
             rb.header("Content-Disposition", "attachment; filename=" + this.downloadFileName);
         }
 
+        // Add HATEOAS links
+        for(Entry<String,String> curLink : this.links.entrySet()) {
+            URI delLocLink = URI.create(curLink.getKey());
+            rb.link(delLocLink, curLink.getValue());
+        }
+        
         if (!this.getConvertedToString().isEmpty()) {
             String convertedMapStr = "Values for [";
             for (Map.Entry<String, Class> curConv : this.getConvertedToString().entrySet()) {
