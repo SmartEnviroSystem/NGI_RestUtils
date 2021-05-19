@@ -133,6 +133,10 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
         
         rob.addErrorMessage(msg + "(" + exception.getClass().getSimpleName() + ")");
         System.err.println("=== STACKTRACE for unmapped exception ===");
+        System.err.println("called: " + this.request.getRequestURI() 
+                + " method: " + this.request.getMethod() 
+                + " mediatype: " + this.request.getContentType());
+        System.out.println(exception.getLocalizedMessage());
         exception.printStackTrace();
         return rob;
     }

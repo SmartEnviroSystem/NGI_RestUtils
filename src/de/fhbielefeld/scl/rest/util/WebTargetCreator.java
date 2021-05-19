@@ -70,6 +70,7 @@ public class WebTargetCreator {
     public WebTarget createWebTarget(String resource) {
         WebTarget webTarget;
         Client client = ClientBuilder.newClient();
+//        client.register(MultiPartFeature.class);
 //        client.register(EncodingFilter.class);
 //        client.register(GZipEncoder.class);
 //            client.property(ClientProperties.USE_ENCODING, "gzip");
