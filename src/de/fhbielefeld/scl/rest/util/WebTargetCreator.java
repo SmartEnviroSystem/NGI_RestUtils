@@ -24,21 +24,22 @@ public class WebTargetCreator {
 
     /**
      * Creates a new WebTargetCreator
-     * 
+     *
      * @param base_url Servers URL where the REST Webservice is located on
      */
     public WebTargetCreator(String base_url) {
         try {
             this.baseUri = this.transformURLtoURI(new URL(base_url));
         } catch (MalformedURLException ex) {
-            Message msg = new Message("Could not build webtarget because of wrong URL syntax: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            Message msg = new Message("Could not build webtarget of >"
+                    + base_url + "< because of wrong URL syntax: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
             Logger.addMessage(msg);
         }
     }
 
     /**
      * Creates a new WebTargetCreator
-     * 
+     *
      * @param base_url Servers URL where the REST Webservice is located on
      */
     public WebTargetCreator(URL base_url) {
@@ -47,7 +48,7 @@ public class WebTargetCreator {
 
     /**
      * Transforms the given URL to URI.
-     * 
+     *
      * @param url URL to transform
      * @return URI object
      */
@@ -55,7 +56,8 @@ public class WebTargetCreator {
         try {
             return new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(), url.getPath(), url.getQuery(), url.getRef());
         } catch (URISyntaxException ex) {
-            Message msg = new Message("Could not build webtarget because of wrong URL syntax: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
+            Message msg = new Message("Could not build webtarget from url >"
+                    + url + "< because of wrong URL syntax: " + ex.getLocalizedMessage(), MessageLevel.ERROR);
             Logger.addMessage(msg);
         }
         return null;
