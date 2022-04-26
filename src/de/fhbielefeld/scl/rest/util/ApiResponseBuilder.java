@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +32,7 @@ public abstract class ApiResponseBuilder {
 
     protected static boolean debugmode = false;
     protected Response.Status status = null;
-    protected NewCookie cookie = null;
+    protected ArrayList<String> cookies = new ArrayList<>();
     protected String downloadFileName = null;
 
     protected final Map<String, Class> convertedToString = new HashMap<>();
@@ -82,12 +84,18 @@ public abstract class ApiResponseBuilder {
      *
      * @param name Name of the cookie
      * @param value Cookies value
-     * @param maxAge Maximum age of cookie
+     * @param maxAge Maximum age in seconds of cookie
      * @return
      */
-    public ApiResponseBuilder setCookie(String name, String value, int maxAge) {
+    public ApiResponseBuilder addCookie(String name, String value, int maxAge) {
         // Defines the cookie without domain, path and comment. Send over http and https and without httpOnly mode (allow access with javascript)
-        this.cookie = new NewCookie(name, value, "/", null, null, maxAge, false, false);
+        String cookie = name + "=" + value;
+        if(maxAge != 0) {
+            LocalDateTime now = LocalDateTime.now();
+            now.plusSeconds(maxAge);
+            cookie += "; expires=" + now.atZone(ZoneId.systemDefault()).withZoneSameInstant(ZoneId.of("UTC")) +";";
+        }
+        this.cookies.add(cookie);
         return this;
     }
 
@@ -270,8 +278,12 @@ public abstract class ApiResponseBuilder {
             this.addErrorMessage("There was no status set for this response");
         }
         Response.ResponseBuilder rb = Response.status(this.status);
-        if (this.cookie != null) {
-            rb.cookie(this.cookie);
+        String cookiesstr = "";
+        for(String curCookie : this.cookies) {
+            cookiesstr += curCookie;
+        }
+        if(!cookiesstr.isEmpty()) {
+            rb.header("Set-Cookie", cookiesstr);
         }
         if (this.downloadFileName != null) {
             rb.header("Content-Disposition", "attachment; filename=" + this.downloadFileName);
