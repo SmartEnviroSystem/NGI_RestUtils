@@ -5,16 +5,16 @@ import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.converters.ObjectConverter;
 import de.fhbielefeld.scl.rest.exceptions.ObjectConvertException;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+import jakarta.json.JsonValue.ValueType;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.JsonValue.ValueType;
 
 /**
  * Builds responses for REST API answers

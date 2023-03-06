@@ -5,17 +5,17 @@ import de.fhbielefeld.scl.logger.LoggerException;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import java.lang.reflect.InvocationTargetException;
 import javax.naming.NamingException;
 import javax.net.ssl.SSLHandshakeException;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 
 /**
  *

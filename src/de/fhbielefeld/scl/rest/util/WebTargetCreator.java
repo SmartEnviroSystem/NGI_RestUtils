@@ -3,13 +3,14 @@ package de.fhbielefeld.scl.rest.util;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
+
 //import org.glassfish.jersey.client.filter.EncodingFilter;
 //import org.glassfish.jersey.message.GZipEncoder;
 

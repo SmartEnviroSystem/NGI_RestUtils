@@ -3,6 +3,11 @@ package de.fhbielefeld.scl.rest.network;
 import de.fhbielefeld.scl.logger.Logger;
 import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -16,11 +21,6 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 /**
  * This class contains methods for createing clients and webtargets for
@@ -95,7 +95,7 @@ public class RESTNetwork {
                 throw rnex;
             }
         } else {
-            client = javax.ws.rs.client.ClientBuilder.newClient();
+            client = jakarta.ws.rs.client.ClientBuilder.newClient();
         }
         return client;
     }
