@@ -125,6 +125,13 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
      */
     private ResponseObjectBuilder createUnkownExceptionResponse(Throwable exception) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
+        
+        if(exception.getLocalizedMessage().contains("HTTP 404 Not Found")) {
+            System.out.println("The URL >" + this.request.getRequestURI() + "< was not found.");
+            rob.setStatus(Response.Status.NOT_FOUND);
+            return rob;
+        }
+        
         rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
         String msg = exception.getLocalizedMessage();
         if(msg == null && exception.getSuppressed().length > 0) {
@@ -136,7 +143,7 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
         System.err.println("called: " + this.request.getRequestURI() 
                 + " method: " + this.request.getMethod() 
                 + " mediatype: " + this.request.getContentType());
-        System.out.println(exception.getLocalizedMessage());
+        
         exception.printStackTrace();
         return rob;
     }
