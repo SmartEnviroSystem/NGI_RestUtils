@@ -87,8 +87,8 @@ public abstract class ApiResponseBuilder {
     public ApiResponseBuilder addCookie(String name, String value, int maxAge) {
         // Defines the cookie without domain, path and comment. Send over http and https and without httpOnly mode (allow access with javascript)
         String cookie = name + "=" + value;
-        if(maxAge != 0) {
-            cookie += "; sameSite=None; max-age=" + maxAge +";";
+        if (maxAge != 0) {
+            cookie += "; sameSite=None; max-age=" + maxAge + ";";
         }
         this.cookies.add(cookie);
         return this;
@@ -96,16 +96,16 @@ public abstract class ApiResponseBuilder {
 
     /**
      * Adds an HATEOAS link to the response
-     * 
+     *
      * @param url
      * @param d
-     * @return 
+     * @return
      */
     public ApiResponseBuilder addLink(String url, String d) {
         this.links.put(url, url);
         return this;
     }
-    
+
     /**
      * Declares the generated response as downloadable.The given filename will
      * be the suggested filename for download in client.
@@ -137,6 +137,13 @@ public abstract class ApiResponseBuilder {
     }
 
     public ApiResponseBuilder addWarningMessage(String warningMessage) {
+        warningMessage = warningMessage.replace("\\", "\\\\");
+        warningMessage = warningMessage.replace("\"", "\\\"");
+        warningMessage = warningMessage.replace("\b", "\\b");
+        warningMessage = warningMessage.replace("\f", "\\f");
+        warningMessage = warningMessage.replace("\n", "\\n");
+        warningMessage = warningMessage.replace("\r", "\\r");
+        warningMessage = warningMessage.replace("\t", "\\t");
         this.warnings.add(warningMessage);
         return this;
     }
@@ -146,6 +153,13 @@ public abstract class ApiResponseBuilder {
     }
 
     public ApiResponseBuilder addErrorMessage(String errorMessage) {
+        errorMessage = errorMessage.replace("\\", "\\\\");
+        errorMessage = errorMessage.replace("\"", "\\\"");
+        errorMessage = errorMessage.replace("\b", "\\b");
+        errorMessage = errorMessage.replace("\f", "\\f");
+        errorMessage = errorMessage.replace("\n", "\\n");
+        errorMessage = errorMessage.replace("\r", "\\r");
+        errorMessage = errorMessage.replace("\t", "\\t");
         this.errors.add(errorMessage);
         return this;
     }
@@ -246,7 +260,15 @@ public abstract class ApiResponseBuilder {
                     }
                     writer.write("\"exceptions\": [");
                     for (int i = 0; i < exceptions.size(); i++) {
-                        writer.write("\"" + exceptions.get(i).getLocalizedMessage() + "\"");
+                        String msg = exceptions.get(i).getLocalizedMessage();
+                        msg = msg.replace("\\", "\\\\");
+                        msg = msg.replace("\"", "\\\"");
+                        msg = msg.replace("\b", "\\b");
+                        msg = msg.replace("\f", "\\f");
+                        msg = msg.replace("\n", "\\n");
+                        msg = msg.replace("\r", "\\r");
+                        msg = msg.replace("\t", "\\t");
+                        writer.write("\"" + msg + "\"");
                         if (i < exceptions.size() - 1) {
                             writer.write(",");
                         }
@@ -259,7 +281,7 @@ public abstract class ApiResponseBuilder {
             }
         };
         ResponseBuilder rb = this.createResponseBuilder();
-        rb.entity(stream);        
+        rb.entity(stream);
         return rb.build();
     }
 
@@ -267,17 +289,17 @@ public abstract class ApiResponseBuilder {
      * Create a JAX-RS ResponseBuilder for this ApiResponseBuilder Adds header
      * information from settings and data inside the ApiResponeBuilder
      */
-    private ResponseBuilder createResponseBuilder() {        
+    private ResponseBuilder createResponseBuilder() {
         if (this.status == null) {
             this.status = Response.Status.INTERNAL_SERVER_ERROR;
             this.addErrorMessage("There was no status set for this response");
         }
         Response.ResponseBuilder rb = Response.status(this.status);
         String cookiesstr = "";
-        for(String curCookie : this.cookies) {
+        for (String curCookie : this.cookies) {
             cookiesstr += curCookie;
         }
-        if(!cookiesstr.isEmpty()) {
+        if (!cookiesstr.isEmpty()) {
             rb.header("Set-Cookie", cookiesstr);
         }
         if (this.downloadFileName != null) {
@@ -285,11 +307,11 @@ public abstract class ApiResponseBuilder {
         }
 
         // Add HATEOAS links
-        for(Entry<String,String> curLink : this.links.entrySet()) {
+        for (Entry<String, String> curLink : this.links.entrySet()) {
             URI delLocLink = URI.create(curLink.getKey());
             rb.link(delLocLink, curLink.getValue());
         }
-        
+
         if (!this.getConvertedToString().isEmpty()) {
             String convertedMapStr = "Values for [";
             for (Map.Entry<String, Class> curConv : this.getConvertedToString().entrySet()) {

@@ -209,7 +209,15 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             }
             sb.append("\"exceptions\": [");
             for (int i = 0; i < exceptions.size(); i++) {
-                sb.append("\"" + exceptions.get(i).getLocalizedMessage() + "\"");
+                String msg = exceptions.get(i).getLocalizedMessage();
+                msg = msg.replace("\\", "\\\\");
+                msg = msg.replace("\"", "\\\"");
+                msg = msg.replace("\b", "\\b");
+                msg = msg.replace("\f", "\\f");
+                msg = msg.replace("\n", "\\n");
+                msg = msg.replace("\r", "\\r");
+                msg = msg.replace("\t", "\\t");
+                sb.append("\"" + msg + "\"");
                 if (i < exceptions.size() - 1) {
                     sb.append(",");
                 }
@@ -220,7 +228,7 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
         sb.append("}");
         return sb.toString();
     }
-    
+
     @Override
     public String toJson() {
         StringBuilder sb = new StringBuilder();
