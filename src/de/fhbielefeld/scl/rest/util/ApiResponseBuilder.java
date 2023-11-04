@@ -88,7 +88,7 @@ public abstract class ApiResponseBuilder {
         // Defines the cookie without domain, path and comment. Send over http and https and without httpOnly mode (allow access with javascript)
         String cookie = name + "=" + value;
         if (maxAge != 0) {
-            cookie += "; sameSite=None; max-age=" + maxAge + ";";
+            cookie += "; sameSite=None; Secure; max-age=" + maxAge + ";";
         }
         this.cookies.add(cookie);
         return this;
