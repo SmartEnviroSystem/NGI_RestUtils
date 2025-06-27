@@ -5,11 +5,20 @@ import de.fhbielefeld.scl.logger.message.Message;
 import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.rest.converters.ObjectConverter;
 import de.fhbielefeld.scl.rest.exceptions.ObjectConvertException;
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonReader;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import jakarta.json.JsonValue.ValueType;
+import jakarta.json.JsonWriter;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.HashMap;
@@ -142,14 +151,24 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.mergeMessages(rlb);
             this.add(key, rlb);
         } else if (value instanceof JsonValue) {
+            System.out.println("TEST " + key + " JsonValue");
             JsonValue jv = (JsonValue) value;
+
             if (jv.getValueType() == ValueType.STRING) {
+                System.out.println("TEST ValueType.STRING");
                 JsonString jstr = (JsonString) jv;
-                this.add(key, jstr.getString());
+//                this.add(key, jstr.getString());
+                this.attrs.put(key, jstr.getString());
             } else {
-                this.attrs.put(key, jv.toString());
+                System.out.println("TEST ValueType Other");
+                StringWriter sw = new StringWriter();
+                try (JsonWriter writer = Json.createWriter(sw)) {
+                    writer.write(jv);
+                }
+                this.attrs.put(key, sw.toString());
             }
         } else {
+            System.out.println("TEST something other");
             this.addConvertedToString(key, value.getClass());
             this.attrs.put(key, "\"" + value.toString() + "\"");
         }
@@ -164,107 +183,124 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
+        JsonObjectBuilder builder = Json.createObjectBuilder();
 
-        // Add content
-        String json = this.toJson();
-        sb.append(json);
-        boolean prevCont = !json.isEmpty();
+        // Basisdaten aus attrs (String → String, aber als JSON-Werte interpretieren)
+        for (Map.Entry<String, String> entry : this.attrs.entrySet()) {
+            try (JsonReader reader = Json.createReader(new StringReader(entry.getValue()))) {
+                JsonValue value = reader.readValue();
+                builder.add(entry.getKey(), value);
+            } catch (Exception e) {
+                builder.add(entry.getKey(), entry.getValue()); // Fallback: roher String
+            }
+        }
 
-        // Add warnings
+        // Warnings
         if (!warnings.isEmpty()) {
-            if (prevCont) {
-                sb.append(",");
-            }
-            sb.append("\"warnings\": [");
-            for (int i = 0; i < warnings.size(); i++) {
-                sb.append("\"" + warnings.get(i) + "\"");
-                if (i < warnings.size() - 1) {
-                    sb.append(",");
-                }
-                prevCont = true;
-            }
-            sb.append("]");
-        }
-        // Add errors
-        if (!errors.isEmpty()) {
-            if (prevCont) {
-                sb.append(",");
-            }
-            sb.append("\"errors\": [");
-            for (int i = 0; i < errors.size(); i++) {
-                sb.append("\"" + errors.get(i) + "\"");
-                if (i < errors.size() - 1) {
-                    sb.append(",");
-                }
-                prevCont = true;
-            }
-            sb.append("]");
-        }
-        // Add exceptions
-        if (!exceptions.isEmpty()) {
-            if (prevCont) {
-                sb.append(",");
-            }
-            sb.append("\"exceptions\": [");
-            for (int i = 0; i < exceptions.size(); i++) {
-                String msg = exceptions.get(i).getLocalizedMessage();
-                msg = msg.replace("\\", "\\\\");
-                msg = msg.replace("\"", "\\\"");
-                msg = msg.replace("\b", "\\b");
-                msg = msg.replace("\f", "\\f");
-                msg = msg.replace("\n", "\\n");
-                msg = msg.replace("\r", "\\r");
-                msg = msg.replace("\t", "\\t");
-                sb.append("\"" + msg + "\"");
-                if (i < exceptions.size() - 1) {
-                    sb.append(",");
-                }
-            }
-            sb.append("]");
+            JsonArrayBuilder warnArr = Json.createArrayBuilder();
+            warnings.forEach(warnArr::add);
+            builder.add("warnings", warnArr);
         }
 
-        sb.append("}");
-        return sb.toString();
+        // Errors
+        if (!errors.isEmpty()) {
+            JsonArrayBuilder errorArr = Json.createArrayBuilder();
+            errors.forEach(errorArr::add);
+            builder.add("errors", errorArr);
+        }
+
+        // Exceptions (escaped)
+        if (!exceptions.isEmpty()) {
+            JsonArrayBuilder exArr = Json.createArrayBuilder();
+            for (Throwable ex : exceptions) {
+                String msg = ex.getLocalizedMessage() != null ? ex.getLocalizedMessage() : ex.toString();
+                exArr.add(msg);
+            }
+            builder.add("exceptions", exArr);
+        }
+
+        StringWriter sw = new StringWriter();
+        try (JsonWriter writer = Json.createWriter(sw)) {
+            writer.writeObject(builder.build());
+        }
+
+        return sw.toString();
     }
 
     @Override
     public String toJson() {
-        StringBuilder sb = new StringBuilder();
-        if (!attrs.isEmpty()) {
-            // Adding stored values
-            int size = attrs.size();
-            int current = 0;
-            for (Map.Entry<String, String> curAttr : this.attrs.entrySet()) {
-                current++;
-                sb.append("\"");
-                sb.append(curAttr.getKey());
-                sb.append("\": ");
-                sb.append(curAttr.getValue());
-                if (current < size) {
-                    sb.append(",");
-                }
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+
+        for (Map.Entry<String, String> entry : this.attrs.entrySet()) {
+            String key = entry.getKey();
+            String rawValue = entry.getValue();
+
+            try (JsonReader reader = Json.createReader(new StringReader(rawValue))) {
+                JsonValue parsed = reader.readValue();
+                builder.add(key, parsed);
+            } catch (Exception e) {
+                // Fallback: als sauberer JSON-String speichern
+                builder.add(key, rawValue);
             }
         }
-        return sb.toString();
+
+        StringWriter sw = new StringWriter();
+        try (JsonWriter writer = Json.createWriter(sw)) {
+            writer.writeObject(builder.build());
+        }
+
+        return sw.toString().substring(1, sw.toString().length() - 1); // Inhalt ohne äußere { }
     }
 
     @Override
-    public boolean toWriter(Writer writer) throws IOException {
-        if (!attrs.isEmpty()) {
-            int size = attrs.size();
-            int current = 0;
-            for (Map.Entry<String, String> curAttr : attrs.entrySet()) {
-                current++;
-                writer.write("\"" + curAttr.getKey() + "\": ");
-                writer.write(curAttr.getValue());
-                if (current < size) {
-                    writer.write(",");
+    public boolean toWriter(Writer writer) {
+        try {
+            JsonGeneratorFactory factory = Json.createGeneratorFactory(null);
+            JsonGenerator generator = factory.createGenerator(writer);
+            generator.writeStartObject();
+
+            // attrs-Inhalte
+            for (Map.Entry<String, String> entry : this.attrs.entrySet()) {
+                String key = entry.getKey();
+                String rawValue = entry.getValue();
+                try (JsonReader reader = Json.createReader(new StringReader(rawValue))) {
+                    generator.write(key, reader.readValue()); // korrekt eingebettet
+                } catch (Exception e) {
+                    generator.write(key, rawValue); // fallback: als String
                 }
             }
+
+            if (!warnings.isEmpty()) {
+                generator.writeStartArray("warnings");
+                for (String warning : warnings) {
+                    generator.write(warning);
+                }
+                generator.writeEnd();
+            }
+
+            if (!errors.isEmpty()) {
+                generator.writeStartArray("errors");
+                for (String error : errors) {
+                    generator.write(error);
+                }
+                generator.writeEnd();
+            }
+
+            if (!exceptions.isEmpty()) {
+                generator.writeStartArray("exceptions");
+                for (Throwable ex : exceptions) {
+                    String msg = ex.getLocalizedMessage() != null ? ex.getLocalizedMessage() : ex.toString();
+                    generator.write(msg);
+                }
+                generator.writeEnd();
+            }
+
+            generator.writeEnd(); // end of root object
+            generator.flush();
             return true;
+
+        } catch (Exception e) {
+            return false;
         }
-        return false;
     }
 }

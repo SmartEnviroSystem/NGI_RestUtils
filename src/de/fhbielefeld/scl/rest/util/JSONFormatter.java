@@ -1,5 +1,10 @@
 package de.fhbielefeld.scl.rest.util;
 
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
+import java.io.StringReader;
+
 /**
  * This class contains methods for formatting JSON a secure way
  *
@@ -48,5 +53,14 @@ public class JSONFormatter {
             }
         }
         return escaped.toString();
+    }
+    
+    public static JsonValue tryParseOrRaw(String input) {
+        try (JsonReader reader = Json.createReader(new StringReader(input))) {
+            return reader.readValue();
+        } catch (Exception e) {
+            // Kein valides JSON – gib als einfacher String zurück
+            return Json.createValue(JSONFormatter.escapeForJson(input));
+        }
     }
 }

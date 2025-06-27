@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -214,69 +215,9 @@ public abstract class ApiResponseBuilder {
      * @return
      */
     public Response toResponseStream() {
-
-        StreamingOutput stream = new StreamingOutput() {
-            @Override
-            public void write(OutputStream out) throws IOException, WebApplicationException {
-                Writer writer = new BufferedWriter(new OutputStreamWriter(out));
-                writer.write("{");
-
-                boolean prevCont = toWriter(writer);
-
-                // Add warnings
-                if (!warnings.isEmpty()) {
-                    if (prevCont) {
-                        writer.write(",");
-                    }
-                    writer.write("\"warnings\": [");
-                    for (int i = 0; i < warnings.size(); i++) {
-                        writer.write("\"" + warnings.get(i) + "\"");
-                        if (i < warnings.size() - 1) {
-                            writer.write(",");
-                        }
-                    }
-                    writer.write("]");
-                    prevCont = true;
-                }
-                // Add errors
-                if (!errors.isEmpty()) {
-                    if (prevCont) {
-                        writer.write(",");
-                    }
-                    writer.write("\"errors\": [");
-                    for (int i = 0; i < errors.size(); i++) {
-                        writer.write("\"" + errors.get(i) + "\"");
-                        if (i < errors.size() - 1) {
-                            writer.write(",");
-                        }
-                    }
-                    writer.write("]");
-                    prevCont = true;
-                }
-                // Add exceptions
-                if (!exceptions.isEmpty()) {
-                    if (prevCont) {
-                        writer.write(",");
-                    }
-                    writer.write("\"exceptions\": [");
-                    for (int i = 0; i < exceptions.size(); i++) {
-                        String msg = exceptions.get(i).getLocalizedMessage();
-                        msg = msg.replace("\\", "\\\\");
-                        msg = msg.replace("\"", "\\\"");
-                        msg = msg.replace("\b", "\\b");
-                        msg = msg.replace("\f", "\\f");
-                        msg = msg.replace("\n", "\\n");
-                        msg = msg.replace("\r", "\\r");
-                        msg = msg.replace("\t", "\\t");
-                        writer.write("\"" + msg + "\"");
-                        if (i < exceptions.size() - 1) {
-                            writer.write(",");
-                        }
-                    }
-                    writer.write("]");
-                }
-
-                writer.write("}");
+        StreamingOutput stream = out -> {
+            try (Writer writer = new BufferedWriter(new OutputStreamWriter(out, StandardCharsets.UTF_8))) {
+                toWriter(writer);
                 writer.flush();
             }
         };
@@ -295,6 +236,7 @@ public abstract class ApiResponseBuilder {
             this.addErrorMessage("There was no status set for this response");
         }
         Response.ResponseBuilder rb = Response.status(this.status);
+        rb.header("Content-Type", "application/json; charset=UTF-8");
         String cookiesstr = "";
         for (String curCookie : this.cookies) {
             cookiesstr += curCookie;
