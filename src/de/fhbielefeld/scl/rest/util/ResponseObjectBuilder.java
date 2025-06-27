@@ -151,16 +151,13 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.mergeMessages(rlb);
             this.add(key, rlb);
         } else if (value instanceof JsonValue) {
-            System.out.println("TEST " + key + " JsonValue");
             JsonValue jv = (JsonValue) value;
 
             if (jv.getValueType() == ValueType.STRING) {
-                System.out.println("TEST ValueType.STRING");
                 JsonString jstr = (JsonString) jv;
 //                this.add(key, jstr.getString());
                 this.attrs.put(key, jstr.getString());
             } else {
-                System.out.println("TEST ValueType Other");
                 StringWriter sw = new StringWriter();
                 try (JsonWriter writer = Json.createWriter(sw)) {
                     writer.write(jv);
@@ -168,7 +165,6 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
                 this.attrs.put(key, sw.toString());
             }
         } else {
-            System.out.println("TEST something other");
             this.addConvertedToString(key, value.getClass());
             this.attrs.put(key, "\"" + value.toString() + "\"");
         }
