@@ -16,9 +16,14 @@ import java.util.Map;
 public class ResponseListBuilder extends ApiResponseBuilder {
 
     private final List<String> attrs = new ArrayList<>();
+    private boolean debug = false;
 
     public ResponseListBuilder() {
 
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     /**
@@ -48,11 +53,13 @@ public class ResponseListBuilder extends ApiResponseBuilder {
             this.attrs.add(rob.toString());
         } else if (value instanceof ResponseListBuilder) {
             ResponseListBuilder rlb = (ResponseListBuilder) value;
+            rlb.setDebug(this.debug);
             this.attrs.add(rlb.toString());
         } else if (value instanceof Map) {
             // Case for map values
             Map map = (Map) value;
             ResponseObjectBuilder subrob = new ResponseObjectBuilder();
+            subrob.setDebug(this.debug);
             for (Object curEntryObj : map.entrySet()) {
                 Map.Entry curEntry = (Map.Entry) curEntryObj;
                 subrob.add(curEntry.getKey().toString(), curEntry.getValue());

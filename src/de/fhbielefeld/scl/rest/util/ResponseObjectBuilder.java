@@ -33,8 +33,13 @@ import java.util.Map.Entry;
 public class ResponseObjectBuilder extends ApiResponseBuilder {
 
     private final Map<String, String> attrs = new HashMap<>(); // Replacement for JsonObjectBuilder (experimental and for subjsons only)
-
+    private boolean debug = false;
+    
     public ResponseObjectBuilder() {
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     /**
@@ -107,6 +112,8 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
      * @return This modified ResponseObjectBuilder
      */
     public ResponseObjectBuilder add(String key, Object value) {
+        if(this.debug)
+            System.out.println("ROB-TEST: " + key + " => " + value + " with type: " + value.getClass().getSimpleName());
         if (value == null) {
             this.attrs.put(key, "null");
         } else if (value instanceof Number) {
@@ -115,6 +122,8 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.attrs.put(key, (Boolean) value + "");
         } else if (value instanceof String) {
             String valueStr = (String) value;
+            if(key.equals("ts"))
+                System.out.println("TEST ROB-String " + value);
             if ((valueStr.startsWith("[") && valueStr.endsWith("]"))
                     || (valueStr.startsWith("{") && valueStr.endsWith("}"))) {
                 this.attrs.put(key, valueStr);
@@ -128,12 +137,14 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.attrs.put(key, rob.toString());
         } else if (value instanceof ResponseListBuilder) {
             ResponseListBuilder rlb = (ResponseListBuilder) value;
+            rlb.setDebug(this.debug);
             this.mergeMessages(rlb);
             this.attrs.put(key, rlb.toString());
         } else if (value instanceof Map) {
             // Case for map values
             Map<?, ?> map = (Map) value;
             ResponseObjectBuilder subrob = new ResponseObjectBuilder();
+            subrob.setDebug(this.debug);
             map.entrySet().stream().forEach(
                     e -> {
                         Entry entry = (Entry) e;
@@ -145,6 +156,7 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             // Case for collections (list, etc.)
             Collection<?> col = (Collection) value;
             ResponseListBuilder rlb = new ResponseListBuilder();
+            rlb.setDebug(this.debug);
             col.stream().forEach(
                     e -> rlb.add(e)
             );
@@ -154,9 +166,9 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             JsonValue jv = (JsonValue) value;
 
             if (jv.getValueType() == ValueType.STRING) {
+                
                 JsonString jstr = (JsonString) jv;
-//                this.add(key, jstr.getString());
-                this.attrs.put(key, jstr.getString());
+                this.add(key, jstr.getString());
             } else {
                 StringWriter sw = new StringWriter();
                 try (JsonWriter writer = Json.createWriter(sw)) {
@@ -165,6 +177,8 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
                 this.attrs.put(key, sw.toString());
             }
         } else {
+            if(this.debug)
+                System.out.println("ROB-TEST "+ key + " unknown type.ConverteToString()");
             this.addConvertedToString(key, value.getClass());
             this.attrs.put(key, "\"" + value.toString() + "\"");
         }
