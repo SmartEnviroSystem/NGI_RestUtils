@@ -1,14 +1,9 @@
 package de.fhbielefeld.scl.rest.converters;
 
-import de.fhbielefeld.scl.logger.Logger;
-import de.fhbielefeld.scl.logger.message.Message;
-import de.fhbielefeld.scl.logger.message.MessageLevel;
 import de.fhbielefeld.scl.reflection.attributes.AttributeReflection;
 import de.fhbielefeld.scl.rest.exceptions.ObjectConvertException;
 import de.fhbielefeld.scl.rest.util.ResponseObjectBuilder;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Holds helper functions for converting an object to json, or xml
