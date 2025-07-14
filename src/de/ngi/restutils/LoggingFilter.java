@@ -11,9 +11,12 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        String processId = UUID.randomUUID().toString();
-        Logger.startProcess(processId);
-        Logger.log("Request started: " + requestContext.getUriInfo().getPath());
+        String debugmode = requestContext.getHeaderString("X-Debug");
+        if (debugmode != null) {
+            String processId = UUID.randomUUID().toString();
+            Logger.startProcess(processId);
+            Logger.log("Request started: " + requestContext.getUriInfo().getPath());
+        }
     }
 
     @Override
