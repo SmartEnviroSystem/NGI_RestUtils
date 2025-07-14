@@ -16,7 +16,6 @@ import jakarta.json.JsonValue.ValueType;
 import jakarta.json.JsonWriter;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -122,8 +121,6 @@ public class ResponseObjectBuilder extends ApiResponseBuilder {
             this.attrs.put(key, (Boolean) value + "");
         } else if (value instanceof String) {
             String valueStr = (String) value;
-            if(key.equals("ts"))
-                System.out.println("TEST ROB-String " + value);
             if ((valueStr.startsWith("[") && valueStr.endsWith("]"))
                     || (valueStr.startsWith("{") && valueStr.endsWith("}"))) {
                 this.attrs.put(key, valueStr);
