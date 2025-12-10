@@ -55,7 +55,20 @@ public class MirrorRequestFilter implements ContainerRequestFilter {
         String normalizedMethod = method.toUpperCase();
         String configKey = normalizedPath + "_" + normalizedStorage + "_" + normalizedMethod + "_url";
 
-        final String mirrorUrl = conf.getProperty(configKey);
+        String mirrorUrl = conf.getProperty(configKey);
+
+        if (mirrorUrl == null || mirrorUrl.isEmpty()) {
+            for (Map.Entry<Object, Object> entry : conf.getAllProperties()) {
+                String key = entry.getKey().toString();
+                String value = entry.getValue().toString();
+
+                // Schlüssel als Regex interpretieren
+                if (configKey.matches(key)) {
+                    mirrorUrl = value;
+                    break;
+                }
+            }
+        }
 
         if (mirrorUrl == null || mirrorUrl.isEmpty()) {
             Logger.addMessage(new Message("No mirror target configured for key: >" + configKey + "<", MessageLevel.WARNING));
@@ -83,11 +96,13 @@ public class MirrorRequestFilter implements ContainerRequestFilter {
         final MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
         final Map<String, Cookie> cookies = requestContext.getCookies();
 
+        final String resolvedMirrorUrl = mirrorUrl;
+        
         // Asynchroner Mirror-Call
         CompletableFuture.runAsync(() -> {
             try {
                 Client client = new JerseyClientBuilder().build();
-                WebTarget target = client.target(mirrorUrl);
+                WebTarget target = client.target(resolvedMirrorUrl);
 
                 // Query-Parameter anhängen
                 for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
@@ -117,9 +132,9 @@ public class MirrorRequestFilter implements ContainerRequestFilter {
                     mirrorResponse = builder.method(finalMethod, Entity.entity(finalBody, mediaType));
                 }
 
-                Logger.addMessage(new Message("Mirrored request to >" + mirrorUrl + "< with status " + mirrorResponse.getStatus(), MessageLevel.INFO));
+                Logger.addMessage(new Message("Mirrored request to >" + resolvedMirrorUrl + "< with status " + mirrorResponse.getStatus(), MessageLevel.INFO));
             } catch (Exception e) {
-                Logger.addMessage(new Message("Failed to mirror request to " + mirrorUrl + ": " + e.getMessage(), MessageLevel.ERROR));
+                Logger.addMessage(new Message("Failed to mirror request to " + resolvedMirrorUrl + ": " + e.getMessage(), MessageLevel.ERROR));
             }
         });
     }
