@@ -71,7 +71,7 @@ public class MirrorRequestFilter implements ContainerRequestFilter {
         }
 
         if (mirrorUrl == null || mirrorUrl.isEmpty()) {
-            Logger.addMessage(new Message("No mirror target configured for key: >" + configKey + "<", MessageLevel.WARNING));
+            Logger.addDebugMessage(new Message("No mirror target configured for key: >" + configKey + "<", MessageLevel.WARNING));
             return;
         }
 
@@ -97,7 +97,7 @@ public class MirrorRequestFilter implements ContainerRequestFilter {
         final Map<String, Cookie> cookies = requestContext.getCookies();
 
         final String resolvedMirrorUrl = mirrorUrl;
-        
+
         // Asynchroner Mirror-Call
         CompletableFuture.runAsync(() -> {
             try {
