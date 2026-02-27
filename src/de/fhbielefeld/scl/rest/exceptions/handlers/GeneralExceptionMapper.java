@@ -69,7 +69,7 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
 
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
         // Handle no interface given
-        if(request.getPathInfo()==null) {
+        if (request.getPathInfo() == null) {
             rob.setStatus(Response.Status.BAD_REQUEST);
             rob.addErrorMessage("No interface selected");
             return rob;
@@ -80,10 +80,10 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
                     + request.getPathInfo() + "< could not be found.";
             rob.setStatus(Response.Status.NOT_FOUND);
             rob.addErrorMessage(nfmsg);
-            if(request.getRequestURI().contains("\\\\")) {
+            if (request.getRequestURI().contains("\\\\")) {
                 rob.addErrorMessage("Request uri contains double slash! " + request.getRequestURI());
             }
-            
+
             Message msg = new Message(nfmsg, MessageLevel.ERROR);
             Logger.addDebugMessage(msg);
             return rob;
@@ -125,25 +125,33 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
      */
     private ResponseObjectBuilder createUnkownExceptionResponse(Throwable exception) {
         ResponseObjectBuilder rob = new ResponseObjectBuilder();
-        
+
+        // 1) BadRequestException -> 400
+        if (exception instanceof jakarta.ws.rs.BadRequestException) {
+            rob.setStatus(Response.Status.BAD_REQUEST);
+            rob.addErrorMessage(exception.getLocalizedMessage());
+            return rob;
+        }
+
+        // 2) NotFoundException -> 404
         String msg = exception.getLocalizedMessage();
-        if(msg != null && msg.contains("HTTP 404 Not Found")) {
+        if (msg != null && msg.contains("HTTP 404 Not Found")) {
             System.out.println("The URL >" + this.request.getRequestURI() + "< was not found.");
             rob.setStatus(Response.Status.NOT_FOUND);
             return rob;
         }
-        
+
         rob.setStatus(Response.Status.INTERNAL_SERVER_ERROR);
-        if(msg == null && exception.getSuppressed().length > 0) {
+        if (msg == null && exception.getSuppressed().length > 0) {
             msg = exception.getSuppressed()[0].getLocalizedMessage();
         }
-        
+
         rob.addErrorMessage(msg + "(" + exception.getClass().getSimpleName() + ")");
         System.err.println("=== STACKTRACE for unmapped exception ===");
-        System.err.println("called: " + this.request.getRequestURI() 
-                + " method: " + this.request.getMethod() 
+        System.err.println("called: " + this.request.getRequestURI()
+                + " method: " + this.request.getMethod()
                 + " mediatype: " + this.request.getContentType());
-        
+
         exception.printStackTrace();
         return rob;
     }
